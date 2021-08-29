@@ -120,7 +120,8 @@ class TestShareCreate(TestShare):
             share_proto=self.new_share.share_proto,
             share_type=self.share_type.id,
             size=self.new_share.size,
-            snapshot_id=None
+            snapshot_id=None,
+            scheduler_hints={}
         )
 
         self.assertCountEqual(self.columns, columns)
@@ -167,7 +168,52 @@ class TestShareCreate(TestShare):
             share_proto=self.new_share.share_proto,
             share_type=self.share_type.id,
             size=self.new_share.size,
-            snapshot_id=None
+            snapshot_id=None,
+            scheduler_hints={}
+        )
+
+        self.assertCountEqual(self.columns, columns)
+        self.assertCountEqual(self.datalist, data)
+
+    def test_share_create_scheduler_hints(self):
+        """Verifies scheduler hints are parsed correctly."""
+        self.app.client_manager.share.api_version = api_versions.APIVersion(
+            "2.65")
+
+        shares = self.setup_shares_mock(count=2)
+        share1_name = shares[0].name
+        share2_name = shares[1].name
+
+        arglist = [
+            self.new_share.share_proto,
+            str(self.new_share.size),
+            '--scheduler-hint', ('same_host=%s' % share1_name),
+            '--scheduler-hint', ('different_host=%s' % share2_name),
+        ]
+        verifylist = [
+            ('share_proto', self.new_share.share_proto),
+            ('size', self.new_share.size),
+            ('scheduler_hint',
+                {'same_host': share1_name, 'different_host': share2_name}),
+        ]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+
+        columns, data = self.cmd.take_action(parsed_args)
+
+        self.shares_mock.create.assert_called_with(
+            availability_zone=None,
+            description=None,
+            is_public=False,
+            metadata={},
+            name=None,
+            share_group_id=None,
+            share_network=None,
+            share_proto=self.new_share.share_proto,
+            share_type=self.share_type.id,
+            size=self.new_share.size,
+            snapshot_id=None,
+            scheduler_hints={'same_host': shares[0].id,
+                             'different_host': shares[1].id},
         )
 
         self.assertCountEqual(self.columns, columns)
@@ -205,7 +251,8 @@ class TestShareCreate(TestShare):
             share_proto=self.new_share.share_proto,
             share_type=self.share_type.id,
             size=self.new_share.size,
-            snapshot_id=self.share_snapshot.id
+            snapshot_id=self.share_snapshot.id,
+            scheduler_hints={}
         )
 
         self.assertCountEqual(self.columns, columns)
@@ -241,7 +288,8 @@ class TestShareCreate(TestShare):
             share_proto=self.new_share.share_proto,
             share_type=self.share_type.id,
             size=self.new_share.size,
-            snapshot_id=None
+            snapshot_id=None,
+            scheduler_hints={}
         )
 
         self.shares_mock.get.assert_called_with(self.new_share.id)
@@ -280,7 +328,8 @@ class TestShareCreate(TestShare):
                 share_proto=self.new_share.share_proto,
                 share_type=self.share_type.id,
                 size=self.new_share.size,
-                snapshot_id=None
+                snapshot_id=None,
+                scheduler_hints={}
             )
 
             mock_logger.error.assert_called_with(
