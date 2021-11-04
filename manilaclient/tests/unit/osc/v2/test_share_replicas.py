@@ -78,7 +78,8 @@ class TestShareReplicaCreate(TestShareReplica):
 
         self.replicas_mock.create.assert_called_with(
             self.share,
-            availability_zone=None
+            availability_zone=None,
+            scheduler_hints={}
         )
 
         self.assertCountEqual(self.columns, columns)
@@ -100,7 +101,8 @@ class TestShareReplicaCreate(TestShareReplica):
 
         self.replicas_mock.create.assert_called_with(
             self.share,
-            availability_zone=self.share.availability_zone
+            availability_zone=self.share.availability_zone,
+            scheduler_hints={}
         )
 
         self.assertCountEqual(self.columns, columns)
@@ -122,7 +124,8 @@ class TestShareReplicaCreate(TestShareReplica):
 
         self.replicas_mock.create.assert_called_with(
             self.share,
-            availability_zone=None
+            availability_zone=None,
+            scheduler_hints={}
         )
 
         self.replicas_mock.get.assert_called_with(self.share_replica.id)
@@ -147,7 +150,8 @@ class TestShareReplicaCreate(TestShareReplica):
 
             self.replicas_mock.create.assert_called_with(
                 self.share,
-                availability_zone=None
+                availability_zone=None,
+                scheduler_hints={}
             )
 
             mock_logger.error.assert_called_with(
