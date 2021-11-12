@@ -15,6 +15,9 @@ from unittest import mock
 from osc_lib import exceptions
 from osc_lib import utils as oscutils
 
+from manilaclient import api_versions
+from manilaclient.api_versions import MAX_VERSION
+
 from manilaclient.osc import utils
 from manilaclient.osc.v2 import share_replicas as osc_share_replicas
 
@@ -32,6 +35,8 @@ class TestShareReplica(manila_fakes.TestShare):
 
         self.replicas_mock = self.app.client_manager.share.share_replicas
         self.replicas_mock.reset_mock()
+        self.app.client_manager.share.api_version = api_versions.APIVersion(
+            MAX_VERSION)
 
 
 class TestShareReplicaCreate(TestShareReplica):
@@ -77,7 +82,7 @@ class TestShareReplicaCreate(TestShareReplica):
         columns, data = self.cmd.take_action(parsed_args)
 
         self.replicas_mock.create.assert_called_with(
-            self.share,
+            share=self.share,
             availability_zone=None
         )
 
@@ -99,12 +104,74 @@ class TestShareReplicaCreate(TestShareReplica):
         columns, data = self.cmd.take_action(parsed_args)
 
         self.replicas_mock.create.assert_called_with(
-            self.share,
+            share=self.share,
             availability_zone=self.share.availability_zone
         )
 
         self.assertCountEqual(self.columns, columns)
         self.assertCountEqual(self.data, data)
+
+    def test_share_replica_create_scheduler_hint_valid(self):
+        arglist = [
+            self.share.id,
+            '--availability-zone', self.share.availability_zone,
+            '--scheduler-hint', ('only_host=host1@backend1#pool1'),
+        ]
+        verifylist = [
+            ('share', self.share.id),
+            ('availability_zone', self.share.availability_zone),
+            ('scheduler_hint', {'only_host': 'host1@backend1#pool1'})
+        ]
+
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+
+        columns, data = self.cmd.take_action(parsed_args)
+
+        self.replicas_mock.create.assert_called_with(
+            share=self.share,
+            availability_zone=self.share.availability_zone,
+            scheduler_hints={'only_host': 'host1@backend1#pool1'}
+        )
+
+        self.assertCountEqual(self.columns, columns)
+        self.assertCountEqual(self.data, data)
+
+    def test_share_replica_create_scheduler_hint_invalid_hint(self):
+        arglist = [
+            self.share.id,
+            '--availability-zone', self.share.availability_zone,
+            '--scheduler-hint', 'fake_hint=host1@backend1#pool1'
+        ]
+        verifylist = [
+            ('share', self.share.id),
+            ('availability_zone', self.share.availability_zone),
+            ('scheduler_hint', {'fake_hint': 'host1@backend1#pool1'})
+        ]
+
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+        self.assertRaises(exceptions.CommandError,
+                          self.cmd.take_action,
+                          parsed_args)
+
+    def test_share_replica_create_scheduler_hint_invalid_version(self):
+        self.app.client_manager.share.api_version = api_versions.APIVersion(
+            "2.64")
+
+        arglist = [
+            self.share.id,
+            '--availability-zone', self.share.availability_zone,
+            '--scheduler-hint', 'only_host=host1@backend1#pool1'
+        ]
+        verifylist = [
+            ('share', self.share.id),
+            ('availability_zone', self.share.availability_zone),
+            ('scheduler_hint', {'only_host': 'host1@backend1#pool1'})
+        ]
+
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+        self.assertRaises(exceptions.CommandError,
+                          self.cmd.take_action,
+                          parsed_args)
 
     def test_share_replica_create_wait(self):
         arglist = [
@@ -121,7 +188,7 @@ class TestShareReplicaCreate(TestShareReplica):
         columns, data = self.cmd.take_action(parsed_args)
 
         self.replicas_mock.create.assert_called_with(
-            self.share,
+            share=self.share,
             availability_zone=None
         )
 
@@ -146,7 +213,7 @@ class TestShareReplicaCreate(TestShareReplica):
             columns, data = self.cmd.take_action(parsed_args)
 
             self.replicas_mock.create.assert_called_with(
-                self.share,
+                share=self.share,
                 availability_zone=None
             )
 
