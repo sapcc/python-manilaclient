@@ -41,6 +41,7 @@ class ShareReplicasTest(utils.TestCase):
         values = {
             'availability_zone': 'az1',
             'share': 's1',
+            'scheduler_hints': None,
         }
         self._create_common(values)
 

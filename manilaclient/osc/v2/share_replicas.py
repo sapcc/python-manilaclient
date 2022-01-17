@@ -11,6 +11,7 @@
 #   under the License.
 import logging
 
+from osc_lib.cli import parseractions
 from osc_lib.command import command
 from osc_lib import exceptions
 from osc_lib import utils as osc_utils
@@ -45,6 +46,15 @@ class CreateShareReplica(command.ShowOne):
             default=False,
             help=_('Wait for replica creation')
         )
+        parser.add_argument(
+            "--scheduler-hint",
+            metavar="<key=value>",
+            default={},
+            action=parseractions.KeyValueAction,
+            help=_("Scheduler hints for the share replica as key=value pairs, "
+                   "Supported key is only_host."
+                   "(repeat option to set multiple hints)"),
+        )
         return parser
 
     def take_action(self, parsed_args):
@@ -52,9 +62,15 @@ class CreateShareReplica(command.ShowOne):
 
         share = osc_utils.find_resource(share_client.shares,
                                         parsed_args.share)
+        scheduler_hints = {}
+        if parsed_args.scheduler_hint:
+            scheduler_hints = utils.extract_key_value_options(
+                parsed_args.scheduler_hint)
+
         share_replica = share_client.share_replicas.create(
             share,
-            availability_zone=parsed_args.availability_zone
+            availability_zone=parsed_args.availability_zone,
+            scheduler_hints=scheduler_hints
         )
         if parsed_args.wait:
             if not osc_utils.wait_for_status(

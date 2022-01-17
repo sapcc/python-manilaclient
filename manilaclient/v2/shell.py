@@ -6021,12 +6021,26 @@ def do_share_replica_list(cs, args):
     action='single_alias',
     metavar='<availability-zone>',
     help='Optional Availability zone in which replica should be created.')
+@cliutils.arg(
+    '--scheduler-hints',
+    '--scheduler_hints',
+    '--sh',
+    metavar='<key=value>',
+    nargs='*',
+    help='Scheduler hints for the share replica as key=value pairs, '
+         'Supported key is only_host.',
+    default=None)
 @api_versions.wraps("2.11")
 def do_share_replica_create(cs, args):
     """Create a share replica."""
     share = _find_share(cs, args.share)
 
-    replica = cs.share_replicas.create(share, args.availability_zone)
+    scheduler_hints = {}
+    if args.scheduler_hints:
+        scheduler_hints = _extract_key_value_options(args, 'scheduler_hints')
+
+    replica = cs.share_replicas.create(share, args.availability_zone,
+                                       scheduler_hints=scheduler_hints)
     _print_share_replica(cs, replica)
 
 
