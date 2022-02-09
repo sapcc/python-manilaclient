@@ -1,4 +1,0 @@
----
-features:
-  - |
-    Share group types can now be filtered with their `group_specs`.
