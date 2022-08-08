@@ -42,6 +42,7 @@ class SecurityServiceTest(utils.TestCase):
             'password': 'fake password',
             'name': 'fake name',
             'description': 'fake description',
+            'defaultadsite': 'fake defaultadsite',
         }
 
         with mock.patch.object(self.manager, '_create', fakes.fake_create):

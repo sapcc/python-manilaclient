@@ -750,6 +750,7 @@ class FakeHTTPClient(fakes.FakeHTTPClient):
                     'dns_ip': 'fake_dns_ip',
                     'ou': 'fake_ou',
                     'type': 'fake_type',
+                    'defaultadsite': 'fake_dedaultadiste',
                     'status': 'fake_status',
                     'project_id': 'fake_project_id',
                     'updated_at': 'fake_updated_at',
