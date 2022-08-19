@@ -32,6 +32,7 @@ class SecurityServiceReadWriteTest(base.BaseTestCase):
         self.domain = 'fake_domain'
         self.dns_ip = '1.2.3.4'
         self.ou = 'fake_ou'
+        self.defaultadsite = 'fake_defaultadsite'
 
     @ddt.data(
         {'name': 'test_name'},
@@ -61,6 +62,7 @@ class SecurityServiceReadWriteTest(base.BaseTestCase):
             'domain': self.domain,
             'dns_ip': self.dns_ip,
             'ou': self.ou,
+            'defaultadsite': self.defaultadsite,
         }
 
         ss = self.create_security_service(**expected_data)

@@ -44,7 +44,7 @@ class SecurityServiceManager(base.ManagerWithFind):
 
     def create(self, type, dns_ip=None, ou=None, server=None, domain=None,
                user=None, password=None, name=None,
-               description=None):
+               description=None, defaultadsite=None):
         """Create security service for NAS.
 
         :param type: security service type - 'ldap', 'kerberos' or
@@ -57,6 +57,7 @@ class SecurityServiceManager(base.ManagerWithFind):
         :param password: password used by user
         :param name: security service name
         :param description: security service description
+        :param defaultadsite: default AD-Site
         :rtype: :class:`SecurityService`
         """
         values = {'type': type}
@@ -76,6 +77,8 @@ class SecurityServiceManager(base.ManagerWithFind):
             values['name'] = name
         if description:
             values['description'] = description
+        if defaultadsite:
+            values['defaultadsite'] = defaultadsite
 
         body = {RESOURCE_NAME: values}
 
@@ -94,7 +97,7 @@ class SecurityServiceManager(base.ManagerWithFind):
 
     def update(self, security_service, dns_ip=None, ou=None, server=None,
                domain=None, password=None, user=None, name=None,
-               description=None):
+               description=None, defaultadsite=None):
         """Updates a security service.
 
         :param security_service: security service to update.
@@ -106,6 +109,7 @@ class SecurityServiceManager(base.ManagerWithFind):
         :param password: password used by user
         :param name: security service name
         :param description: security service description
+        :param defaultadsite: default AD-Site
         :rtype: :class:`SecurityService`
         """
 
@@ -126,6 +130,8 @@ class SecurityServiceManager(base.ManagerWithFind):
             values['name'] = name
         if description is not None:
             values['description'] = description
+        if defaultadsite is not None:
+            values['defaultadsite'] = defaultadsite
 
         for k, v in values.items():
             if v == '':
