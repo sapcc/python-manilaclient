@@ -122,13 +122,13 @@ class ShareReplicaManager(base.ManagerWithFind):
             share, availability_zone=availability_zone)
 
     @api_versions.wraps("2.65")  # noqa
-    def create(self, share, availability_zone=None, scheduler_hints=None): # noqa F811
+    def create(self, share, availability_zone=None, scheduler_hints=None, id=None): # noqa F811
         return self._create_share_replica(
             share, availability_zone=availability_zone,
-            scheduler_hints=scheduler_hints)
+            scheduler_hints=scheduler_hints, id=id)
 
     def _create_share_replica(self, share, availability_zone=None,
-                              scheduler_hints=None):
+                              scheduler_hints=None, id=None):
         """Create a replica for a share.
 
         :param share: The share to create the replica of. Can be the share
@@ -136,6 +136,7 @@ class ShareReplicaManager(base.ManagerWithFind):
         :param availability_zone: The 'availability_zone' object or its UUID.
         :param scheduler_hints: The scheduler_hints as key=value pair. Only
         supported key is 'only_host'.
+        :param id: cloud admins can (re-)create replicas with dedicated id
         """
 
         share_id = common_base.getid(share)
@@ -146,6 +147,9 @@ class ShareReplicaManager(base.ManagerWithFind):
 
         if scheduler_hints:
             body['scheduler_hints'] = scheduler_hints
+
+        if id:
+            body['id'] = id
         return self._create(RESOURCES_PATH,
                             {RESOURCE_NAME: body},
                             RESOURCE_NAME)
