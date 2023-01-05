@@ -133,22 +133,23 @@ class ShareReplicaManager(base.ManagerWithFind):
             share, availability_zone=availability_zone)
 
     @api_versions.wraps("2.67", "2.71")  # noqa
-    def create(self, share, availability_zone=None, scheduler_hints=None): # noqa F811
+    def create(self, share, availability_zone=None, scheduler_hints=None, id=None): # noqa F811
         return self._create_share_replica(
             share, availability_zone=availability_zone,
-            scheduler_hints=scheduler_hints)
+            scheduler_hints=scheduler_hints, id=id)
 
     @api_versions.wraps("2.72")  # noqa
     def create(self, share, # pylint: disable=function-redefined  # noqa F811
                availability_zone=None, scheduler_hints=None,
-               share_network=None):
+               share_network=None, id=None):
         return self._create_share_replica(
             share, availability_zone=availability_zone,
             scheduler_hints=scheduler_hints,
-            share_network=share_network)
+            share_network=share_network, id=id)
 
     def _create_share_replica(self, share, availability_zone=None,
-                              scheduler_hints=None, share_network=None):
+                              scheduler_hints=None, share_network=None,
+                              id=None):
         """Create a replica for a share.
 
         :param share: The share to create the replica of. Can be the share
@@ -157,6 +158,7 @@ class ShareReplicaManager(base.ManagerWithFind):
         :param scheduler_hints: The scheduler_hints as key=value pair. Only
         supported key is 'only_host'.
         :param share_network: either share network object or its UUID.
+        :param id: cloud admins can (re-)create replicas with dedicated id
         """
 
         share_id = base.getid(share)
@@ -171,6 +173,8 @@ class ShareReplicaManager(base.ManagerWithFind):
         if share_network:
             body['share_network_id'] = base.getid(share_network)
 
+        if id:
+            body['id'] = id
         return self._create(RESOURCES_PATH,
                             {RESOURCE_NAME: body},
                             RESOURCE_NAME)
