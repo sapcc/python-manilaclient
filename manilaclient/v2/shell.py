@@ -6144,11 +6144,19 @@ def do_share_replica_delete(cs, args):
     'replica',
     metavar='<replica>',
     help='ID of the share replica.')
+@cliutils.arg(
+    '--force',
+    dest='force',
+    action="store_true",
+    default=False,
+    help='Promote the replica regardless of the state of the current '
+         'active replica.')
 @api_versions.wraps("2.11")
 def do_share_replica_promote(cs, args):
     """Promote specified replica to 'active' replica_state."""
     replica = _find_share_replica(cs, args.replica)
-    cs.share_replicas.promote(replica)
+    force = args.force
+    cs.share_replicas.promote(replica, force)
 
 
 @api_versions.wraps("2.47")
