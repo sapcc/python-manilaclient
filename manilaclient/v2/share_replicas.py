@@ -94,31 +94,33 @@ class ShareReplicaManager(base.ManagerWithFind):
 
     @api_versions.wraps("2.11", constants.REPLICA_PRE_GRADUATION_VERSION)
     @api_versions.experimental_api
-    def promote(self, replica):
+    def promote(self, replica, force):
         """Promote the provided replica.
 
         :param replica: either replica object or its UUID.
         """
-        return self._action('promote', replica)
+        return self._action('promote', replica, {'force': force})
 
     @api_versions.wraps(constants.REPLICA_GRADUATION_VERSION, '2.74')  # noqa
-    def promote(self, replica):  # noqa F811
+    def promote(self, replica, force):  # noqa F811
         """Promote the provided replica.
 
         :param replica: either replica object or its UUID.
         """
-        return self._action('promote', replica)
+        return self._action('promote', replica, {'force': force})
 
     @api_versions.wraps('2.75')  # noqa
-    def promote(self, replica, quiesce_wait_time=None):  # noqa F811
+    def promote(self, replica, force, quiesce_wait_time=None):  # noqa F811
         """Promote the provided replica.
 
         :param replica: either replica object or its UUID.
         :param body: either replica object or its UUID.
         """
-        body = None
+        body = dict()
         if quiesce_wait_time:
             body = dict(quiesce_wait_time=quiesce_wait_time)
+
+        body.update({'force': force})
         return self._action('promote', replica, body)
 
     @api_versions.wraps("2.11", constants.REPLICA_PRE_GRADUATION_VERSION)

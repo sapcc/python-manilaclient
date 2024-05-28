@@ -6550,17 +6550,32 @@ def do_share_replica_delete(cs, args):
     'replica',
     metavar='<replica>',
     help='ID of the share replica.')
+@cliutils.arg(
+    '--force',
+    dest='force',
+    action="store_true",
+    default=False,
+    help='Promote the replica regardless of the state of the current '
+         'active replica.')
 @api_versions.wraps("2.11", "2.74")
 def do_share_replica_promote(cs, args):
     """Promote specified replica to 'active' replica_state."""
     replica = _find_share_replica(cs, args.replica)
-    cs.share_replicas.promote(replica)
+    force = args.force
+    cs.share_replicas.promote(replica, force)
 
 
 @cliutils.arg(
     'replica',
     metavar='<replica>',
     help='ID of the share replica.')
+@cliutils.arg(
+    '--force',
+    dest='force',
+    action="store_true",
+    default=False,
+    help='Promote the replica regardless of the state of the current '
+         'active replica.')
 @cliutils.arg(
     '--quiesce-wait-time',
     metavar='<quiesce-wait-time>',
@@ -6577,10 +6592,11 @@ def do_share_replica_promote(cs, args):  # noqa
     """Promote specified replica to 'active' replica_state."""
     replica = _find_share_replica(cs, args.replica)
 
+    force = args.force
     quiesce_wait_time = None
     if args.quiesce_wait_time:
         quiesce_wait_time = args.quiesce_wait_time
-    cs.share_replicas.promote(replica, quiesce_wait_time)
+    cs.share_replicas.promote(replica, force, quiesce_wait_time)
     if args.wait:
         _wait_for_resource_status(
             cs, replica,
