@@ -113,4 +113,17 @@ def build_option_parser(parser):
              'version supported by both the client and the server). '
              '(Env: OS_SHARE_API_VERSION)',
     )
+    parser.add_argument(
+        "--os-shared-file-system-endpoint-override",
+        metavar="<shared-file-system-endpoint-override>",
+        default=utils.env(
+            "OS_SHARED_FILE_SYSTEM_ENDPOINT_OVERRIDE",
+            "OS_MANILA_BYPASS_URL",
+            "MANILACLIENT_BYPASS_URL",
+        ),
+        help=(
+            "Use this API endpoint instead of the Service Catalog. "
+            "Defaults to env[OS_SHARED_FILE_SYSTEM_ENDPOINT_OVERRIDE]."
+        ),
+    )
     return parser
