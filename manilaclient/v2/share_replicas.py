@@ -116,7 +116,7 @@ class ShareReplicaManager(base.ManagerWithFind):
         :param replica: either replica object or its UUID.
         :param body: either replica object or its UUID.
         """
-        body = None
+        body = dict()
         if quiesce_wait_time:
             body = dict(quiesce_wait_time=quiesce_wait_time)
 
