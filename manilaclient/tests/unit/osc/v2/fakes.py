@@ -18,6 +18,8 @@ from unittest import mock
 import uuid
 
 from openstackclient.tests.unit.identity.v3 import fakes as identity_fakes
+from osc_lib.cli import format_columns
+
 
 from manilaclient.tests.unit.osc import osc_fakes
 from manilaclient.tests.unit.osc import osc_utils
@@ -832,7 +834,8 @@ class FakeShareReplica(object):
             'share_network_id': None,
             'share_server_id': None,
             'status': None,
-            'updated_at': None
+            'updated_at': None,
+            "properties": format_columns.DictColumn({}),
         }
 
         share_replica.update(attrs)

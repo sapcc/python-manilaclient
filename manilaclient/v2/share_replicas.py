@@ -24,7 +24,7 @@ RESOURCES_NAME = 'share_replicas'
 RESOURCE_NAME = 'share_replica'
 
 
-class ShareReplica(base.Resource):
+class ShareReplica(base.MetadataCapableResource):
     """A replica is 'mirror' instance of a share at some point in time."""
     def __repr__(self):
         return "<Share Replica: %s>" % self.id
@@ -46,9 +46,10 @@ class ShareReplica(base.Resource):
         self.manager.reset_replica_state(self, replica_state)
 
 
-class ShareReplicaManager(base.ManagerWithFind):
+class ShareReplicaManager(base.MetadataCapableManager):
     """Manage :class:`ShareReplica` resources."""
     resource_class = ShareReplica
+    resource_path = '/share-replicas'
 
     @api_versions.wraps("2.11", constants.REPLICA_PRE_GRADUATION_VERSION)
     @api_versions.experimental_api
@@ -81,16 +82,26 @@ class ShareReplicaManager(base.ManagerWithFind):
         """List all share replicas or list replicas belonging to a share.
 
         :param share: either share object or its UUID.
-        :param search_opts: default None
+        :param search_opts: dict of search options (e.g., metadata filters)
         :rtype: list of :class:`ShareReplica`
         """
+        search_opts = search_opts or {}
+
+        # This will turn {'metadata': {'foo': 'bar', 'baz': 'qux'}}
+        # into ?metadata=foo:bar,baz:qux
+        query_string = self._build_query_string(search_opts)
 
         if share:
             share_id = '?share_id=' + base.getid(share)
             url = RESOURCES_PATH + '/detail' + share_id
+            if query_string:
+                url += '&' + query_string.lstrip('?')
             return self._list(url, RESOURCES_NAME)
         else:
-            return self._list(RESOURCES_PATH + '/detail', RESOURCES_NAME)
+            url = RESOURCES_PATH + '/detail'
+            if query_string:
+                url += query_string
+            return self._list(url, RESOURCES_NAME)
 
     @api_versions.wraps("2.11", constants.REPLICA_PRE_GRADUATION_VERSION)
     @api_versions.experimental_api
@@ -140,18 +151,51 @@ class ShareReplicaManager(base.ManagerWithFind):
             share, availability_zone=availability_zone,
             scheduler_hints=scheduler_hints, id=id)
 
-    @api_versions.wraps("2.72")  # noqa
-    def create(self, share, # pylint: disable=function-redefined  # noqa F811
-               availability_zone=None, scheduler_hints=None,
-               share_network=None, id=None):
+    @api_versions.wraps("2.72", "2.88")  # noqa
+    def create(  # noqa
+        self,
+        share,  # pylint: disable=function-redefined  # noqa F811
+        availability_zone=None,
+        scheduler_hints=None,
+        id=None,
+        share_network=None,
+    ):
         return self._create_share_replica(
-            share, availability_zone=availability_zone,
+            share,
+            availability_zone=availability_zone,
             scheduler_hints=scheduler_hints,
-            share_network=share_network, id=id)
+            id=id,
+            share_network=share_network,
+        )
 
-    def _create_share_replica(self, share, availability_zone=None,
-                              scheduler_hints=None, share_network=None,
-                              id=None):
+    @api_versions.wraps("2.89")  # noqa
+    def create(  # noqa
+        self,
+        share,  # pylint: disable=function-redefined  # noqa F811
+        availability_zone=None,
+        scheduler_hints=None,
+        id=None,
+        share_network=None,
+        metadata=None,
+    ):
+        return self._create_share_replica(
+            share,
+            availability_zone=availability_zone,
+            scheduler_hints=scheduler_hints,
+            id=id,
+            share_network=share_network,
+            metadata=metadata,
+        )
+
+    def _create_share_replica(
+        self,
+        share,
+        availability_zone=None,
+        scheduler_hints=None,
+        id=None,
+        share_network=None,
+        metadata=None,
+    ):
         """Create a replica for a share.
 
         :param share: The share to create the replica of. Can be the share
@@ -161,11 +205,13 @@ class ShareReplicaManager(base.ManagerWithFind):
         supported key is 'only_host'.
         :param share_network: either share network object or its UUID.
         :param id: cloud admins can (re-)create replicas with dedicated id
+        :param metadata: dict - optional metadata to set on share replica
+        creation
         """
 
         share_id = base.getid(share)
-        body = {'share_id': share_id}
 
+        body = {'share_id': share_id}
         if availability_zone:
             body['availability_zone'] = base.getid(availability_zone)
 
@@ -177,9 +223,13 @@ class ShareReplicaManager(base.ManagerWithFind):
 
         if id:
             body['id'] = id
-        return self._create(RESOURCES_PATH,
-                            {RESOURCE_NAME: body},
-                            RESOURCE_NAME)
+
+        if metadata:
+            body['metadata'] = metadata
+
+        return self._create(
+            RESOURCES_PATH, {RESOURCE_NAME: body}, RESOURCE_NAME
+        )
 
     @api_versions.wraps("2.11", constants.REPLICA_PRE_GRADUATION_VERSION)
     @api_versions.experimental_api
