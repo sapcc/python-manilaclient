@@ -211,6 +211,61 @@ class TestShareReplicaCreate(TestShareReplica):
         self.assertCountEqual(self.columns, columns)
         self.assertCountEqual(self.data, data)
 
+    def test_share_replica_create_with_metadata(self):
+        self.app.client_manager.share.api_version = api_versions.APIVersion(
+            "2.95"
+        )
+
+        arglist = [
+            self.share.id,
+            '--availability-zone',
+            self.share.availability_zone,
+            '--property',
+            'fake_key1=fake_value1',
+            '--property',
+            'fake_key2=fake_value2',
+        ]
+        verifylist = [
+            ('share', self.share.id),
+            ('availability_zone', self.share.availability_zone),
+            (
+                'property',
+                {'fake_key1': 'fake_value1', 'fake_key2': 'fake_value2'},
+            ),
+        ]
+
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+
+        columns, data = self.cmd.take_action(parsed_args)
+
+        self.replicas_mock.create.assert_called_with(
+            share=self.share,
+            availability_zone=self.share.availability_zone,
+            metadata={'fake_key1': 'fake_value1', 'fake_key2': 'fake_value2'},
+        )
+
+        self.assertCountEqual(self.columns, columns)
+        self.assertCountEqual(self.data, data)
+
+    def test_share_replica_create_metadata_api_version_exception(self):
+        self.app.client_manager.share.api_version = api_versions.APIVersion(
+            '2.88'
+        )
+        arglist = [
+            self.share.id,
+            '--property',
+            'fake_key=fake_value',
+        ]
+        verifylist = [
+            ('share', self.share.id),
+            ('property', {'fake_key': 'fake_value'}),
+        ]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+
+        self.assertRaises(
+            exceptions.CommandError, self.cmd.take_action, parsed_args
+        )
+
     def test_share_replica_create_wait(self):
         arglist = [
             self.share.id,
@@ -430,7 +485,7 @@ class TestShareReplicaList(TestShareReplica):
 
         columns, data = self.cmd.take_action(parsed_args)
 
-        self.replicas_mock.list.assert_called_with(share=None)
+        self.replicas_mock.list.assert_called_with(share=None, search_opts={})
 
         self.assertEqual(self.column_headers, columns)
         self.assertEqual(list(self.values), list(data))
@@ -447,7 +502,9 @@ class TestShareReplicaList(TestShareReplica):
 
         columns, data = self.cmd.take_action(parsed_args)
 
-        self.replicas_mock.list.assert_called_with(share=self.share)
+        self.replicas_mock.list.assert_called_with(
+            share=self.share, search_opts={}
+        )
 
         self.assertEqual(self.column_headers, columns)
         self.assertEqual(list(self.values), list(data))
@@ -513,8 +570,8 @@ class TestShareReplicaSet(TestShareReplica):
     def setUp(self):
         super(TestShareReplicaSet, self).setUp()
 
-        self.share_replica = (
-            manila_fakes.FakeShareReplica.create_one_replica()
+        self.share_replica = manila_fakes.FakeShareReplica.create_one_replica(
+            methods={"set_metadata": None}
         )
         self.replicas_mock.get.return_value = self.share_replica
 
@@ -609,6 +666,115 @@ class TestShareReplicaSet(TestShareReplica):
             exceptions.CommandError,
             self.cmd.take_action,
             parsed_args)
+
+    def test_share_replica_set_property(self):
+        self.app.client_manager.share.api_version = api_versions.APIVersion(
+            '2.95'
+        )
+        arglist = [
+            self.share_replica.id,
+            '--property',
+            'fake_key=fake_value',
+        ]
+        verifylist = [
+            ('replica', self.share_replica.id),
+            ('property', {'fake_key': 'fake_value'}),
+        ]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+
+        self.cmd.take_action(parsed_args)
+
+        self.share_replica.set_metadata.assert_called_once_with(
+            {'fake_key': 'fake_value'},
+        )
+
+    def test_share_replica_set_property_exception(self):
+        self.app.client_manager.share.api_version = api_versions.APIVersion(
+            '2.89'
+        )
+        arglist = [
+            self.share_replica.id,
+            '--property',
+            'fake_key=fake_value',
+        ]
+        verifylist = [
+            ('replica', self.share_replica.id),
+            ('property', {'fake_key': 'fake_value'}),
+        ]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+
+        self.cmd.take_action(parsed_args)
+
+        self.share_replica.set_metadata.assert_called_once_with(
+            {'fake_key': 'fake_value'},
+        )
+
+        self.share_replica.set_metadata.side_effect = exceptions.BadRequest
+        self.assertRaises(
+            exceptions.CommandError, self.cmd.take_action, parsed_args
+        )
+
+
+class TestShareReplicaUnset(TestShareReplica):
+    def setUp(self):
+        super().setUp()
+
+        self.share_replica = manila_fakes.FakeShareReplica.create_one_replica(
+            methods={"delete_metadata": None}
+        )
+        self.replicas_mock.get.return_value = self.share_replica
+
+        self.cmd = osc_share_replicas.UnsetShareReplica(self.app, None)
+
+    def test_share_replica_unset_property(self):
+        self.app.client_manager.share.api_version = api_versions.APIVersion(
+            '2.95'
+        )
+        arglist = [
+            '--property',
+            'test_key',
+            self.share_replica.id,
+        ]
+        verifylist = [
+            ('property', ['test_key']),
+            ('replica', self.share_replica.id),
+        ]
+
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+
+        self.cmd.take_action(parsed_args)
+
+        self.share_replica.delete_metadata.assert_called_once_with(
+            parsed_args.property
+        )
+
+    def test_share_replica_unset_property_exception(self):
+        self.app.client_manager.share.api_version = api_versions.APIVersion(
+            '2.95'
+        )
+        arglist = [
+            self.share_replica.id,
+            '--property',
+            'test_key',
+        ]
+        verifylist = [
+            ('replica', self.share_replica.id),
+            ('property', ['test_key']),
+        ]
+
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+
+        self.cmd.take_action(parsed_args)
+
+        self.share_replica.delete_metadata.assert_called_once_with(
+            parsed_args.property
+        )
+
+        # 404 Not Found would be raised, if property 'test_key' doesn't exist.
+        self.share_replica.delete_metadata.side_effect = exceptions.NotFound
+        self.assertRaises(
+            exceptions.CommandError, self.cmd.take_action, parsed_args
+        )
 
 
 class TestShareReplicaPromote(TestShareReplica):

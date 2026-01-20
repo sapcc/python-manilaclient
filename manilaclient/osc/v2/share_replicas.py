@@ -11,6 +11,7 @@
 #   under the License.
 import logging
 
+from osc_lib.cli import format_columns
 from osc_lib.cli import parseractions
 from osc_lib.command import command
 from osc_lib import exceptions
@@ -63,6 +64,17 @@ class CreateShareReplica(command.ShowOne):
             help=_('Optional network info ID or name. Available for '
                    'microversion >= 2.72')
         )
+        parser.add_argument(
+            "--property",
+            metavar="<key=value>",
+            default={},
+            action=parseractions.KeyValueAction,
+            help=_(
+                "Set a property to this replica "
+                "(repeat option to set multiple properties). "
+                "Available only for microversion >= 2.89"
+            ),
+        )
         return parser
 
     def take_action(self, parsed_args):
@@ -88,6 +100,21 @@ class CreateShareReplica(command.ShowOne):
             'share': share,
             'availability_zone': parsed_args.availability_zone,
         }
+
+        metadata = {}
+        if parsed_args.property:
+            if share_client.api_version < api_versions.APIVersion("2.89"):
+                raise exceptions.CommandError(
+                    _(
+                        "arg '--property' is available only starting "
+                        "with API microversion '2.89'."
+                    )
+                )
+            metadata = parsed_args.property
+
+        if metadata:
+            body['metadata'] = metadata
+
         if scheduler_hints:
             body['scheduler_hints'] = scheduler_hints
 
@@ -192,6 +219,16 @@ class ListShareReplica(command.Lister):
             default=None,
             help=_("Name or ID of the share to list replicas for.")
         )
+        parser.add_argument(
+            '--property',
+            metavar='<key=value>',
+            action=parseractions.KeyValueAction,
+            help=_(
+                'Filter replicas having a given metadata key=value '
+                'property. (repeat option to filter by multiple '
+                'properties)'
+            ),
+        )
         return parser
 
     def take_action(self, parsed_args):
@@ -203,7 +240,32 @@ class ListShareReplica(command.Lister):
                 share_client.shares,
                 parsed_args.share)
 
-        replicas = share_client.share_replicas.list(share=share)
+        properties = parsed_args.property or {}
+        if properties:
+            if share_client.api_version < api_versions.APIVersion("2.89"):
+                raise exceptions.CommandError(
+                    "Property based filtering is only available "
+                    "with manila API version >= 2.89"
+                )
+
+        search_opts = {}
+        if properties:
+            meta_str = ",".join(f"{k}:{v}" for k, v in properties.items())
+            search_opts['metadata'] = meta_str
+
+        replicas = share_client.share_replicas.list(
+            share=share, search_opts=search_opts
+        )
+
+        if properties:
+            replicas = [
+                r
+                for r in replicas
+                if all(
+                    r._info.get('metadata', {}).get(k) == v
+                    for k, v in properties.items()
+                )
+            ]
 
         columns = [
             'id',
@@ -214,7 +276,6 @@ class ListShareReplica(command.Lister):
             'availability_zone',
             'updated_at',
         ]
-
         column_headers = utils.format_column_headers(columns)
         data = (osc_utils.get_dict_properties(
             replica._info, columns) for replica in replicas)
@@ -255,7 +316,18 @@ class ShowShareReplica(command.ShowOne):
         if parsed_args.formatter == 'table':
             replica._info['export_locations'] = (
                 cliutils.convert_dict_list_to_string(
-                    replica._info['export_locations']))
+                    replica._info['export_locations']
+                )
+            )
+        # Special mapping for columns to make the output easier to read:
+        # 'metadata' --> 'properties'
+        replica._info.update(
+            {
+                'properties': format_columns.DictColumn(
+                    replica._info.pop('metadata', {})
+                ),
+            },
+        )
 
         replica._info.pop('links', None)
 
@@ -265,8 +337,10 @@ class ShowShareReplica(command.ShowOne):
 class SetShareReplica(command.Command):
     """Set share replica"""
 
-    _description = _("Explicitly set share replica status and/or "
-                     "replica-state")
+    _description = _(
+        "Explicitly set share replica status and/or replica-state "
+        "and/or property"
+    )
 
     def get_parser(self, prog_name):
         parser = super(SetShareReplica, self).get_parser(prog_name)
@@ -290,6 +364,17 @@ class SetShareReplica(command.Command):
             help=_("Indicate which status to assign the replica. Options "
                    "include available, error, creating, deleting and "
                    "error_deleting.")
+        )
+        parser.add_argument(
+            "--property",
+            metavar="<key=value>",
+            default={},
+            action=parseractions.KeyValueAction,
+            help=_(
+                "Set a property to this replica "
+                "(repeat option to set multiple properties). "
+                "Available only for microversion >= 2.89"
+            ),
         )
         return parser
 
@@ -327,13 +412,92 @@ class SetShareReplica(command.Command):
                     "Failed to set status '%(status)s': %(exception)s"),
                     {'status': parsed_args.status, 'exception': e})
 
-        if not parsed_args.replica_state and not parsed_args.status:
-            raise exceptions.CommandError(_(
-                "Nothing to set. Please define "
-                "either '--replica_state' or '--status'."))
+        if parsed_args.property:
+            if share_client.api_version < api_versions.APIVersion("2.89"):
+                raise exceptions.CommandError(
+                    _(
+                        "Setting properties in share replicas is available "
+                        "only starting with API microversion '2.89'."
+                    )
+                )
+            try:
+                replica.set_metadata(parsed_args.property)
+            except Exception as e:
+                LOG.error(
+                    _(
+                        "Failed to set share replica properties "
+                        "'%(properties)s': %(exception)s"
+                    ),
+                    {'properties': parsed_args.property, 'exception': e},
+                )
+                result += 1
+
+        if (
+            not parsed_args.replica_state
+            and not parsed_args.status
+            and not parsed_args.property
+        ):
+            raise exceptions.CommandError(
+                _(
+                    "Nothing to set. Please define "
+                    "either '--replica_state' or '--status' or '--property'."
+                )
+            )
         if result > 0:
             raise exceptions.CommandError(_("One or more of the "
                                           "set operations failed"))
+
+
+class UnsetShareReplica(command.Command):
+    """Unset a share replica property."""
+
+    _description = _("Unset a share replica property")
+
+    def get_parser(self, prog_name):
+        parser = super().get_parser(prog_name)
+        parser.add_argument(
+            "replica",
+            metavar="<replica>",
+            help=_("Unset a property for"),
+        )
+        parser.add_argument(
+            '--property',
+            metavar='<key>',
+            action='append',
+            help=_(
+                'Remove a property from replica '
+                '(repeat option to remove multiple properties)'
+            ),
+        )
+        return parser
+
+    def take_action(self, parsed_args):
+        share_client = self.app.client_manager.share
+
+        replica = osc_utils.find_resource(
+            share_client.share_replicas, parsed_args.replica
+        )
+
+        if parsed_args.property:
+            if share_client.api_version < api_versions.APIVersion("2.89"):
+                raise exceptions.CommandError(
+                    _(
+                        "arg '--property' is available only starting "
+                        "with API microversion '2.89'."
+                    )
+                )
+            for key in parsed_args.property:
+                try:
+                    replica.delete_metadata([key])
+                except Exception as e:
+                    msg = _(
+                        "Failed to unset replica property '%(key)s': %(e)s"
+                    )
+                    raise exceptions.CommandError(msg % {'key': key, 'e': e})
+        else:
+            raise exceptions.CommandError(
+                "Please specify '--property <key>' to unset a property."
+            )
 
 
 class PromoteShareReplica(command.Command):
