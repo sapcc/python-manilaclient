@@ -54,6 +54,7 @@ class QuotaClassSetManager(base.ManagerWithFind):
         share_networks=None,
         share_replicas=None,
         replica_gigabytes=None,
+        share_server_replicas=None,
         per_share_gigabytes=None,
         share_groups=None,
         share_group_snapshots=None,
@@ -72,6 +73,7 @@ class QuotaClassSetManager(base.ManagerWithFind):
                 'per_share_gigabytes': per_share_gigabytes,
                 'share_groups': share_groups,
                 'share_group_snapshots': share_group_snapshots,
+                'share_server_replicas': share_server_replicas,
             }
         }
 
@@ -187,6 +189,7 @@ class QuotaClassSetManager(base.ManagerWithFind):
         share_replicas=None,
         replica_gigabytes=None,
         per_share_gigabytes=None,
+        share_server_replicas=None,
     ):
         return self._do_update(
             class_name,
@@ -200,5 +203,6 @@ class QuotaClassSetManager(base.ManagerWithFind):
             share_replicas=share_replicas,
             replica_gigabytes=replica_gigabytes,
             per_share_gigabytes=per_share_gigabytes,
+            share_server_replicas=share_server_replicas,
             resource_path=RESOURCE_PATH,
         )

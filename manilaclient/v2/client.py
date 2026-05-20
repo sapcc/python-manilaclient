@@ -42,6 +42,7 @@ from manilaclient.v2 import share_network_subnets
 from manilaclient.v2 import share_networks
 from manilaclient.v2 import share_replica_export_locations
 from manilaclient.v2 import share_replicas
+from manilaclient.v2 import share_server_replicas
 from manilaclient.v2 import share_servers
 from manilaclient.v2 import share_snapshot_export_locations
 from manilaclient.v2 import share_snapshot_instance_export_locations
@@ -279,6 +280,9 @@ class Client:
         self.share_types = share_types.ShareTypeManager(self)
         self.share_type_access = share_type_access.ShareTypeAccessManager(self)
         self.share_servers = share_servers.ShareServerManager(self)
+        self.share_server_replicas = (
+            share_server_replicas.ShareServerReplicaManager(self)
+        )
         self.share_replicas = share_replicas.ShareReplicaManager(self)
         self.share_replica_export_locations = (
             share_replica_export_locations.ShareReplicaExportLocationManager(

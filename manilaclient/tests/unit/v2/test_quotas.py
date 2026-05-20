@@ -22,6 +22,7 @@ from manilaclient.tests.unit import utils
 from manilaclient.v2 import quotas
 
 REPLICA_QUOTAS_MICROVERSION = '2.53'
+SHARE_SERVER_REPLICA_QUOTAS_MICROVERSION = '2.100'
 
 
 @ddt.ddt
@@ -112,6 +113,7 @@ class QuotaSetsTest(utils.TestCase):
         ("2.38", {}),
         ("2.38", {"force": True}),
         ("2.39", {}),
+        ("2.100", {"force": True, "share_server_replicas": 11}),
         ("2.39", {"force": True}),
         ("2.53", {}),
         ("2.53", {"force": True, "share_replicas": 8, "replica_gigabytes": 9}),
@@ -151,7 +153,13 @@ class QuotaSetsTest(utils.TestCase):
             )
 
     @ddt.data(
-        "2.6", "2.7", "2.38", "2.39", "2.40", REPLICA_QUOTAS_MICROVERSION
+        "2.6",
+        "2.7",
+        "2.38",
+        "2.39",
+        "2.40",
+        REPLICA_QUOTAS_MICROVERSION,
+        SHARE_SERVER_REPLICA_QUOTAS_MICROVERSION,
     )
     def test_update_user_quota(self, microversion):
         tenant_id = 'test'
@@ -205,6 +213,13 @@ class QuotaSetsTest(utils.TestCase):
             expected_body['quota_set']['per_share_gigabytes'] = 10
             kwargs['per_share_gigabytes'] = expected_body['quota_set'][
                 'per_share_gigabytes'
+            ]
+        if api_versions.APIVersion(microversion) >= api_versions.APIVersion(
+            SHARE_SERVER_REPLICA_QUOTAS_MICROVERSION
+        ):
+            expected_body['quota_set']['share_server_replicas'] = 11
+            kwargs['share_server_replicas'] = expected_body['quota_set'][
+                'share_server_replicas'
             ]
 
         with mock.patch.object(

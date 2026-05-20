@@ -63,6 +63,7 @@ class FakeShareClient:
         self.share_group_types = mock.Mock()
         self.share_group_type_access = mock.Mock()
         self.share_servers = mock.Mock()
+        self.share_server_replicas = mock.Mock()
         self.resource_locks = mock.Mock()
         self.qos_types = mock.Mock()
 

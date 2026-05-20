@@ -143,6 +143,16 @@ class QuotaSet(command.Command):
             ),
         )
         parser.add_argument(
+            '--share-server-replicas',
+            metavar='<share-server-replicas>',
+            type=int,
+            default=None,
+            help=_(
+                'New value for the "share-server-replicas" quota. '
+                'Available only for microversion >= 2.100'
+            ),
+        )
+        parser.add_argument(
             '--per-share-gigabytes',
             metavar='<per-share-gigabytes>',
             type=int,
@@ -235,6 +245,16 @@ class QuotaSet(command.Command):
                     )
                 )
             kwargs["replica_gigabytes"] = parsed_args.replica_gigabytes
+        if parsed_args.share_server_replicas is not None:
+            if share_client.api_version < api_versions.APIVersion('2.100'):
+                raise exceptions.CommandError(
+                    _(
+                        "setting the number of 'share server replicas' is "
+                        "available only starting with API microversion "
+                        "'2.100'."
+                    )
+                )
+            kwargs["share_server_replicas"] = parsed_args.share_server_replicas
         if parsed_args.per_share_gigabytes is not None:
             if share_client.api_version < api_versions.APIVersion('2.62'):
                 raise exceptions.CommandError(
@@ -263,6 +283,7 @@ class QuotaSet(command.Command):
                     "'snapshot-gigabytes', 'share-networks', 'share-type', "
                     "'share-groups', 'share-group-snapshots', "
                     "'share-replicas', 'replica-gigabytes', "
+                    "'share-server-replicas', "
                     "'per-share-gigabytes', 'encryption_keys'"
                 )
             )
