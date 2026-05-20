@@ -65,15 +65,19 @@ Manila using a few fake back ends:
     MANILA_OPTGROUP_alpha_share_driver=manila.tests.share.drivers.dummy.DummyDriver
     MANILA_OPTGROUP_alpha_driver_handles_share_servers=True
     MANILA_OPTGROUP_alpha_share_backend_name=ALPHA
+    MANILA_OPTGROUP_alpha_backend_availability_zone=az1
     MANILA_OPTGROUP_alpha_network_config_group=membernet
     MANILA_OPTGROUP_alpha_admin_network_config_group=adminnet
+    MANILA_OPTGROUP_alpha_replication_domain=DUMMY_DOMAIN_2
 
     # beta
     MANILA_OPTGROUP_beta_share_driver=manila.tests.share.drivers.dummy.DummyDriver
     MANILA_OPTGROUP_beta_driver_handles_share_servers=True
     MANILA_OPTGROUP_beta_share_backend_name=BETA
+    MANILA_OPTGROUP_beta_backend_availability_zone=az2
     MANILA_OPTGROUP_beta_network_config_group=membernet
     MANILA_OPTGROUP_beta_admin_network_config_group=adminnet
+    MANILA_OPTGROUP_beta_replication_domain=DUMMY_DOMAIN_2
 
     # gamma
     MANILA_OPTGROUP_gamma_share_driver=manila.tests.share.drivers.dummy.DummyDriver

@@ -1,0 +1,19 @@
+---
+features:
+  - |
+    Added full support for share server replica operations in manila client.
+    New OpenStackClient (OSC) commands are available for managing share server
+    replicas:
+
+    * ``openstack share server replica create`` - Create a new share server replica
+    * ``openstack share server replica delete`` - Delete a share server replica
+    * ``openstack share server replica list`` - List share server replicas
+    * ``openstack share server replica show`` - Display share server replica details
+    * ``openstack share server replica promote`` - Promote a share server replica to primary
+    * ``openstack share server replica resync`` - Resynchronize a share server replica
+    * ``openstack share server replica set`` - Set share server replica properties
+    * ``openstack share server replica unset`` - Unset share server replica properties
+
+    Additionally, the underlying client library now provides full API support for
+    share server replica management operations including metadata management
+    (``set_metadata``, ``delete_metadata``, ``update_all_metadata``).

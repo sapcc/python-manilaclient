@@ -19,6 +19,7 @@ from manilaclient import base
 RESOURCE_PATH_LEGACY = '/os-quota-sets'
 RESOURCE_PATH = '/quota-sets'
 REPLICA_QUOTAS_MICROVERSION = "2.53"
+SHARE_SERVER_REPLICA_QUOTAS_MICROVERSION = "2.100"
 
 
 class QuotaSet(base.Resource):
@@ -113,6 +114,7 @@ class QuotaSetManager(base.ManagerWithFind):
         share_group_snapshots=None,
         share_replicas=None,
         replica_gigabytes=None,
+        share_server_replicas=None,
         per_share_gigabytes=None,
         encryption_keys=None,
         resource_path=RESOURCE_PATH,
@@ -131,6 +133,7 @@ class QuotaSetManager(base.ManagerWithFind):
                 'force': force,
                 'share_replicas': share_replicas,
                 'replica_gigabytes': replica_gigabytes,
+                'share_server_replicas': share_server_replicas,
                 'per_share_gigabytes': per_share_gigabytes,
                 'encryption_keys': encryption_keys,
             },
@@ -341,7 +344,7 @@ class QuotaSetManager(base.ManagerWithFind):
             resource_path=RESOURCE_PATH,
         )
 
-    @api_versions.wraps("2.90")  # noqa
+    @api_versions.wraps("2.90", "2.99")  # noqa
     def update(  # noqa
         self,
         tenant_id,
@@ -375,6 +378,47 @@ class QuotaSetManager(base.ManagerWithFind):
             share_group_snapshots=share_group_snapshots,
             share_replicas=share_replicas,
             replica_gigabytes=replica_gigabytes,
+            per_share_gigabytes=per_share_gigabytes,
+            encryption_keys=encryption_keys,
+            resource_path=RESOURCE_PATH,
+        )
+
+    @api_versions.wraps(SHARE_SERVER_REPLICA_QUOTAS_MICROVERSION)  # noqa
+    def update(  # noqa
+        self,
+        tenant_id,
+        user_id=None,
+        share_type=None,
+        shares=None,
+        snapshots=None,
+        gigabytes=None,
+        snapshot_gigabytes=None,
+        share_networks=None,
+        share_groups=None,
+        share_group_snapshots=None,
+        share_replicas=None,
+        replica_gigabytes=None,
+        force=None,
+        per_share_gigabytes=None,
+        encryption_keys=None,
+        share_server_replicas=None,
+    ):
+        self._validate_st_and_sn_in_same_request(share_type, share_networks)
+        return self._do_update(
+            tenant_id,
+            shares,
+            snapshots,
+            gigabytes,
+            snapshot_gigabytes,
+            share_networks,
+            force,
+            user_id,
+            share_type=share_type,
+            share_groups=share_groups,
+            share_group_snapshots=share_group_snapshots,
+            share_replicas=share_replicas,
+            replica_gigabytes=replica_gigabytes,
+            share_server_replicas=share_server_replicas,
             per_share_gigabytes=per_share_gigabytes,
             encryption_keys=encryption_keys,
             resource_path=RESOURCE_PATH,

@@ -191,6 +191,14 @@ share_qos_type_show = "manilaclient.osc.v2.qos_types:ShowQosType"
 share_qos_type_set = "manilaclient.osc.v2.qos_types:SetQosType"
 share_qos_type_unset = "manilaclient.osc.v2.qos_types:UnsetQosType"
 share_qos_type_delete = "manilaclient.osc.v2.qos_types:DeleteQosType"
+share_server_replica_create = "manilaclient.osc.v2.share_server_replicas:CreateShareServerReplica"
+share_server_replica_delete = "manilaclient.osc.v2.share_server_replicas:DeleteShareServerReplica"
+share_server_replica_list = "manilaclient.osc.v2.share_server_replicas:ListShareServerReplica"
+share_server_replica_show = "manilaclient.osc.v2.share_server_replicas:ShowShareServerReplica"
+share_server_replica_set = "manilaclient.osc.v2.share_server_replicas:SetShareServerReplica"
+share_server_replica_unset = "manilaclient.osc.v2.share_server_replicas:UnsetShareServerReplica"
+share_server_replica_promote = "manilaclient.osc.v2.share_server_replicas:PromoteShareServerReplica"
+share_server_replica_resync = "manilaclient.osc.v2.share_server_replicas:ResyncShareServerReplica"
 
 [tool.setuptools]
 packages = [

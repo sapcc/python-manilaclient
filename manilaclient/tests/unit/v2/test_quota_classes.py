@@ -82,3 +82,23 @@ class QuotaClassSetsTest(utils.TestCase):
             manager._update.assert_called_once_with(
                 expected_url, expected_body
             )
+
+    def test_update_quota_share_server_replicas(self):
+        class_name = 'test'
+        manager = self._get_manager('2.100')
+        expected_url = f"{quota_classes.RESOURCE_PATH}/{class_name}"
+        expected_body = {
+            'quota_class_set': {
+                'class_name': class_name,
+                'share_server_replicas': 11,
+            },
+        }
+
+        with mock.patch.object(
+            manager, '_update', mock.Mock(return_value='fake_update')
+        ):
+            manager.update(class_name, share_server_replicas=11)
+
+            manager._update.assert_called_once_with(
+                expected_url, expected_body
+            )
